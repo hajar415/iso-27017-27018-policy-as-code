@@ -28,22 +28,8 @@ jobs:
         run: pip install checkov
 
       - name: Run Checkov Scan
-        id: checkov
         run: |
           checkov -d terraform/ \
             --framework terraform \
-            --output cli \
-            --quiet
+            --output cli
         continue-on-error: true
-
-      - name: Post Results to PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🔍 **Compliance Scan Complete**\n\nCheckov has scanned your infrastructure code. Review the results above.'
-            })
