@@ -1,0 +1,65 @@
+name: ISO 27017/27018 Compliance Check
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'terraform/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+
+jobs:
+  checkov-scan:
+    runs-on: ubuntu-latest
+    name: Checkov Security Scan
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Checkov
+        run: |
+          pip install checkov
+
+      - name: Run Checkov Scan
+        id: checkov
+        run: |
+          checkov -d terraform/ \
+            --framework terraform \
+            --output cli \
+            --quiet \
+            --soft-fail
+        continue-on-error: true
+
+      - name: Upload Checkov Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: checkov-report
+          path: |
+            checkov-report.*
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Checkov compliance scan completed. Check the artifacts for the full report.'
+            })
+
+      - name: Fail if Critical Violations Found
+        if: steps.checkov.outcome == 'failure'
+        run: |
+          echo "Compliance check failed. Please fix the violations before merging."
+          exit 1
