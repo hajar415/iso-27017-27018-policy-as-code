@@ -73,3 +73,17 @@ resource "aws_kms_alias" "s3_key" {
 
 # Récupère l'ID du compte
 data "aws_caller_identity" "current" {}
+
+
+resource "aws_s3_bucket_lifecycle_configuration" "encrypted_bucket" {
+  bucket = aws_s3_bucket.encrypted_bucket.id
+  
+  rule {
+    id     = "delete-old-versions"
+    status = "Enabled"
+    
+    noncurrent_version_expiration {
+      noncurrent_days = 90
+    }
+  }
+}
