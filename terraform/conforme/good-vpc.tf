@@ -1,4 +1,6 @@
-# Compliant VPC with proper security groups
+# ✅ CONFORME ISO 27017
+# VPC avec segmentation et sécurité réseau
+
 resource "aws_vpc" "secure_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -6,33 +8,155 @@ resource "aws_vpc" "secure_vpc" {
 
   tags = {
     Name = "secure-vpc"
-    ISO  = "27017-compliant"
   }
 }
 
-# Properly restricted security group
-resource "aws_security_group" "restricted_sg" {
-  name        = "restricted-sg"
-  description = "Restricted security group - ISO 27017 compliant"
-  vpc_id      = aws_vpc.secure_vpc.id
+# ✅ Subnet privé (pas d'accès direct à Internet)
+resource "aws_subnet" "private_subnet" {
+  vpc_id            = aws_vpc.secure_vpc.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
 
+  tags = {
+    Name = "private-subnet"
+  }
+}
+
+# ✅ Subnet public pour bastion (limité)
+resource "aws_subnet" "public_subnet" {
+  vpc_id            = aws_vpc.secure_vpc.id
+  cidr_block        = "10.0.2.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name = "public-subnet"
+  }
+}
+
+# ✅ Internet Gateway (contrôlé)
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.secure_vpc.id
+
+  tags = {
+    Name = "secure-igw"
+  }
+}
+
+# ✅ Route table publique RESTREINTE
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.secure_vpc.id
+
+  route {
+    cidr_block      = "0.0.0.0/0"
+    gateway_id      = aws_internet_gateway.gw.id
+  }
+
+  tags = {
+    Name = "public-rt"
+  }
+}
+
+resource "aws_route_table_association" "public_association" {
+  subnet_id      = aws_subnet.public_subnet.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+# ✅ Security Group RESTREINT (ISO 27017)
+# ❌ PAS d'accès SSH/RDP au public (0.0.0.0/0)
+resource "aws_security_group" "restricted_sg" {
+  vpc_id      = aws_vpc.secure_vpc.id
+  name        = "restricted-sg"
+  description = "Restricted security group - SSH/RDP blocked from public"
+
+  # ✅ Accès SSH UNIQUEMENT depuis le bastion (10.0.2.0/24)
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]
-    description = "SSH from internal network only"
+    cidr_blocks = ["10.0.2.0/24"]  # ✅ CONFORME : Accès restreint
   }
 
-  egress {
+  # ✅ Accès HTTPS
+  ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "HTTPS outbound"
+  }
+
+  # ✅ Accès HTTP
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # ✅ Tout accès sortant autorisé
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
     Name = "restricted-sg"
   }
+}
+
+# ✅ Flow Logs pour audit (ISO 27017)
+resource "aws_flow_log" "vpc_flow_log" {
+  iam_role_arn    = aws_iam_role.flow_log_role.arn
+  log_destination = aws_cloudwatch_log_group.flow_log_group.arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.secure_vpc.id
+
+  tags = {
+    Name = "vpc-flow-log"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "flow_log_group" {
+  name              = "/aws/vpc/flowlogs"
+  retention_in_days = 30
+}
+
+resource "aws_iam_role" "flow_log_role" {
+  name = "vpc-flow-log-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "vpc-flow-logs.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "flow_log_policy" {
+  name = "vpc-flow-log-policy"
+  role = aws_iam_role.flow_log_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
 }
