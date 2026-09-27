@@ -15,3 +15,15 @@ resource "aws_security_group" "bad_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+# Test: Another bad security group
+resource "aws_security_group" "test_bad" {
+  name = "test_ssh_open"
+  
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
