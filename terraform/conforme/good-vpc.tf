@@ -1,6 +1,20 @@
 # ✅ CONFORME ISO 27017
-# VPC avec segmentation et sécurité réseau
+# VPC avec segmentation + Security Groups ATTACHÉS à une EC2
 
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+# ✅ VPC sécurisé
 resource "aws_vpc" "secure_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -11,7 +25,7 @@ resource "aws_vpc" "secure_vpc" {
   }
 }
 
-# ✅ Subnet privé (pas d'accès direct à Internet)
+# ✅ Subnet privé
 resource "aws_subnet" "private_subnet" {
   vpc_id            = aws_vpc.secure_vpc.id
   cidr_block        = "10.0.1.0/24"
@@ -22,7 +36,7 @@ resource "aws_subnet" "private_subnet" {
   }
 }
 
-# ✅ Subnet public pour bastion (limité)
+# ✅ Subnet public pour bastion
 resource "aws_subnet" "public_subnet" {
   vpc_id            = aws_vpc.secure_vpc.id
   cidr_block        = "10.0.2.0/24"
@@ -33,7 +47,7 @@ resource "aws_subnet" "public_subnet" {
   }
 }
 
-# ✅ Internet Gateway (contrôlé)
+# ✅ Internet Gateway
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.secure_vpc.id
 
@@ -73,7 +87,7 @@ resource "aws_security_group" "restricted_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["10.0.2.0/24"]  # ✅ CONFORME : Accès restreint
+    cidr_blocks = ["10.0.2.0/24"]
   }
 
   # ✅ Accès HTTPS
@@ -102,6 +116,18 @@ resource "aws_security_group" "restricted_sg" {
 
   tags = {
     Name = "restricted-sg"
+  }
+}
+
+# ✅ EC2 INSTANCE AVEC LE SECURITY GROUP ATTACHÉ (CKV2_AWS_5 fix)
+resource "aws_instance" "secure_instance" {
+  ami                    = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.private_subnet.id
+  vpc_security_group_ids = [aws_security_group.restricted_sg.id]
+
+  tags = {
+    Name = "secure-instance"
   }
 }
 

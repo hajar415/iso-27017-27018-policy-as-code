@@ -1,11 +1,27 @@
 # ✅ CONFORME ISO 27018
-# S3 bucket avec chiffrement KMS obligatoire
+# S3 bucket avec chiffrement KMS + lifecycle configuration
 
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+data "aws_caller_identity" "current" {}
+
+# ✅ Bucket chiffré avec KMS
 resource "aws_s3_bucket" "encrypted_bucket" {
   bucket = "my-encrypted-bucket-${data.aws_caller_identity.current.account_id}"
 }
 
-# Bloc l'accès public
+# ✅ Bloc l'accès public
 resource "aws_s3_bucket_public_access_block" "encrypted_bucket" {
   bucket = aws_s3_bucket.encrypted_bucket.id
 
@@ -15,7 +31,7 @@ resource "aws_s3_bucket_public_access_block" "encrypted_bucket" {
   restrict_public_buckets = true
 }
 
-# Chiffrement KMS OBLIGATOIRE (ISO 27018)
+# ✅ Chiffrement KMS OBLIGATOIRE (ISO 27018)
 resource "aws_s3_bucket_server_side_encryption_configuration" "encrypted_bucket" {
   bucket = aws_s3_bucket.encrypted_bucket.id
 
@@ -28,7 +44,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encrypted_bucket"
   }
 }
 
-# Versioning pour backup (ISO 27017)
+# ✅ Versioning pour backup (ISO 27017)
 resource "aws_s3_bucket_versioning" "encrypted_bucket" {
   bucket = aws_s3_bucket.encrypted_bucket.id
 
@@ -37,7 +53,30 @@ resource "aws_s3_bucket_versioning" "encrypted_bucket" {
   }
 }
 
-# Logging pour audit (ISO 27018)
+# ✅ LIFECYCLE CONFIGURATION (CKV2_AWS_61)
+resource "aws_s3_bucket_lifecycle_configuration" "encrypted_bucket" {
+  bucket = aws_s3_bucket.encrypted_bucket.id
+
+  rule {
+    id     = "delete-old-versions"
+    status = "Enabled"
+
+    noncurrent_version_expiration {
+      noncurrent_days = 90
+    }
+  }
+
+  rule {
+    id     = "delete-incomplete-uploads"
+    status = "Enabled"
+
+    incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+# ✅ Logging pour audit (ISO 27018)
 resource "aws_s3_bucket_logging" "encrypted_bucket" {
   bucket = aws_s3_bucket.encrypted_bucket.id
 
@@ -45,7 +84,7 @@ resource "aws_s3_bucket_logging" "encrypted_bucket" {
   target_prefix = "logs/"
 }
 
-# Bucket pour les logs
+# ✅ Bucket pour les logs
 resource "aws_s3_bucket" "log_bucket" {
   bucket = "my-log-bucket-${data.aws_caller_identity.current.account_id}"
 }
@@ -59,7 +98,21 @@ resource "aws_s3_bucket_public_access_block" "log_bucket" {
   restrict_public_buckets = true
 }
 
-# Clé KMS pour chiffrement
+# ✅ Lifecycle pour log bucket
+resource "aws_s3_bucket_lifecycle_configuration" "log_bucket" {
+  bucket = aws_s3_bucket.log_bucket.id
+
+  rule {
+    id     = "delete-old-logs"
+    status = "Enabled"
+
+    expiration {
+      days = 30
+    }
+  }
+}
+
+# ✅ Clé KMS pour chiffrement
 resource "aws_kms_key" "s3_key" {
   description             = "KMS key for S3 encryption (ISO 27018)"
   deletion_window_in_days = 10
@@ -69,21 +122,4 @@ resource "aws_kms_key" "s3_key" {
 resource "aws_kms_alias" "s3_key" {
   name          = "alias/s3-encryption-key"
   target_key_id = aws_kms_key.s3_key.key_id
-}
-
-# Récupère l'ID du compte
-data "aws_caller_identity" "current" {}
-
-
-resource "aws_s3_bucket_lifecycle_configuration" "encrypted_bucket" {
-  bucket = aws_s3_bucket.encrypted_bucket.id
-  
-  rule {
-    id     = "delete-old-versions"
-    status = "Enabled"
-    
-    noncurrent_version_expiration {
-      noncurrent_days = 90
-    }
-  }
 }
