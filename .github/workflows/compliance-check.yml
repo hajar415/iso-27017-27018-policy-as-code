@@ -29,11 +29,9 @@ jobs:
             --framework terraform \
             --check CKV_AWS_24,CKV2_AWS_5,CKV2_AWS_61 \
             --output cli \
-            --compact \
-            || true
+            --compact
 
       - name: Check results
         run: |
-          echo "✅ Checkov scan completed"
-          echo "Checks evaluated: CKV_AWS_24 (SSH), CKV2_AWS_5 (SG attached), CKV2_AWS_61 (Lifecycle)"
+          echo "✅ Checkov scan completed - All checks passed!"
           exit 0
