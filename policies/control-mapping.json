@@ -1,33 +1,33 @@
 {
     "schema_version": "1.0",
-    "notice": "Les priorites ci-dessous sont definies par le projet. Elles ne sont pas des gravites officielles de Checkov ni une declaration de conformite ISO.",
+    "notice": "Les priorités sont définies par le projet. Elles ne sont pas des niveaux de sévérité officiels de Checkov ni une déclaration de conformité ISO.",
     "controls": {
         "CKV_AWS_24": {
-            "title": "Acces SSH ouvert depuis Internet",
-            "plain_language": "Une regle de securite autorise des connexions SSH depuis n'importe quelle adresse IPv4.",
-            "risk": "Un service d'administration expose sur Internet peut recevoir des tentatives de connexion non autorisees.",
-            "recommendation": "Limiter SSH aux adresses ou reseaux autorises. Privilegier un acces prive ou un bastion securise lorsque cela convient a l'architecture.",
+            "title": "Accès SSH ouvert à Internet",
+            "plain_language": "Une règle de sécurité autorise des connexions SSH depuis n'importe quelle adresse IPv4.",
+            "risk": "Un service d'administration exposé sur Internet peut recevoir des tentatives de connexion non autorisées. Cela augmente la surface d'attaque et le risque d'accès non autorisé.",
+            "recommendation": "Limiter SSH aux adresses IP ou aux réseaux explicitement autorisés. Lorsque c'est adapté à l'architecture, privilégier un accès privé, un VPN ou un bastion sécurisé.",
             "project_priority": "high",
             "iso_mapping_status": "to_validate",
-            "iso_mapping_note": "La correspondance exacte avec les controles ISO applicables doit etre verifiee dans les editions de reference."
+            "iso_mapping_note": "La correspondance exacte avec les contrôles ISO applicables doit être vérifiée dans les éditions de référence avant toute affirmation de conformité."
         },
         "CKV2_AWS_5": {
-            "title": "Groupe de securite non associe",
-            "plain_language": "Un groupe de securite est defini, mais Checkov ne detecte pas son association a une ressource.",
-            "risk": "Cette configuration peut indiquer une ressource inutilisee, une configuration incomplete ou un ecart entre la configuration attendue et la configuration reelle.",
-            "recommendation": "Verifier si le groupe de securite est necessaire. Le supprimer s'il est inutile, ou l'associer a la ressource prevue si cela correspond a l'architecture.",
+            "title": "Groupe de sécurité non associé à une ressource",
+            "plain_language": "Un groupe de sécurité est défini, mais Checkov ne détecte pas son association à une autre ressource.",
+            "risk": "Cette situation peut indiquer une configuration incomplète, une ressource inutile ou un écart entre la configuration prévue et celle qui est déclarée. Le résultat doit être vérifié dans le contexte de l'architecture.",
+            "recommendation": "Vérifier si le groupe de sécurité est nécessaire. S'il est inutile, envisager de le retirer. S'il est nécessaire, vérifier qu'il est associé à la ressource prévue. Ne pas créer une association artificielle uniquement pour faire passer le contrôle.",
             "project_priority": "low",
             "iso_mapping_status": "to_validate",
-            "iso_mapping_note": "Ce controle technique ne constitue pas, a lui seul, la preuve d'une violation d'une clause ISO."
+            "iso_mapping_note": "Ce contrôle technique ne constitue pas, à lui seul, la preuve d'une violation d'une clause ISO. La correspondance éventuelle doit être justifiée dans la cartographie des contrôles."
         },
         "CKV2_AWS_61": {
-            "title": "Politique de cycle de vie S3 absente",
-            "plain_language": "Aucune configuration de cycle de vie S3 correspondant au controle Checkov n'a ete detectee.",
-            "risk": "Sans gestion adaptee du cycle de vie, les objets peuvent etre conserves plus longtemps que prevu ou generer des couts de stockage inutiles.",
-            "recommendation": "Definir des regles de transition ou de suppression selon les besoins metier, les obligations de conservation et la sensibilite des donnees. Ne pas supprimer automatiquement des donnees sans validation.",
+            "title": "Règles de cycle de vie S3 absentes",
+            "plain_language": "Checkov ne détecte pas de configuration de cycle de vie pour le bucket S3 concerné.",
+            "risk": "Sans règles de cycle de vie adaptées, des objets peuvent rester stockés plus longtemps que prévu ou entraîner des coûts de stockage évitables. L'absence de règle n'est toutefois pas automatiquement une violation : le besoin doit être défini par la politique de conservation.",
+            "recommendation": "Définir des règles de transition ou de suppression en accord avec les besoins métier, la sensibilité des données et les obligations de conservation. Valider la durée avec les responsables concernés avant d'automatiser toute suppression.",
             "project_priority": "medium",
             "iso_mapping_status": "to_validate",
-            "iso_mapping_note": "La pertinence depend de la politique de conservation des donnees et du contexte. Aucune clause ISO precise n'est attribuee a ce stade."
+            "iso_mapping_note": "La pertinence de ce contrôle dépend de la politique de conservation des données et du contexte. Aucune clause ISO précise n'est attribuée avant vérification documentaire."
         }
     }
 }

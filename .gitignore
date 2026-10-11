@@ -220,3 +220,4 @@ __marimo__/
 # Generated local Checkov outputs
 /checkov-results.json
 /reports/compliance-report.md
+/reports/compliance-report.pdf

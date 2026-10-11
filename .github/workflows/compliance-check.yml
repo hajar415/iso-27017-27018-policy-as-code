@@ -24,10 +24,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Checkov
+      - name: Install Checkov and PDF dependency
         run: |
           python -m pip install --upgrade pip
-          python -m pip install checkov==3.3.27
+          python -m pip install checkov==3.3.27 reportlab==4.4.9
 
       - name: Run Checkov and preserve scan result
         id: checkov
@@ -51,7 +51,7 @@ jobs:
             exit 2
           fi
 
-          # Keep this step successful temporarily so that the report
+          # Keep this step successful temporarily so the reports
           # can be generated and uploaded before compliance is enforced.
           exit 0
 
@@ -63,7 +63,15 @@ jobs:
             --mapping policies/control-mapping.json \
             --output reports/compliance-report.md
 
-      - name: Upload compliance report and raw results
+      - name: Generate PDF compliance report
+        id: pdf_report
+        run: |
+          python scripts/generate_pdf_report.py \
+            --input checkov-results.json \
+            --mapping policies/control-mapping.json \
+            --output reports/compliance-report.pdf
+
+      - name: Upload compliance reports and raw results
         id: upload_report
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
@@ -71,6 +79,7 @@ jobs:
           name: iso-27017-27018-report-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             reports/compliance-report.md
+            reports/compliance-report.pdf
             checkov-results.json
           if-no-files-found: error
           retention-days: 14
@@ -84,13 +93,12 @@ jobs:
         run: |
           echo "## Rapport Policy as Code" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "[Télécharger le rapport et les résultats JSON]($ARTIFACT_URL)" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Télécharger le rapport PDF, le Markdown et le JSON]($ARTIFACT_URL)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [ "$SCAN_EXIT_CODE" != "0" ]; then
-            echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "⚠️ Checkov a détecté des violations. La fusion doit rester bloquée." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "Tous les contrôles Checkov sélectionnés ont réussi." >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -101,6 +109,7 @@ jobs:
           CHECKOV_EXIT_CODE: ${{ steps.checkov.outputs.exit_code }}
           CHECKOV_OUTCOME: ${{ steps.checkov.outcome }}
           REPORT_OUTCOME: ${{ steps.report.outcome }}
+          PDF_REPORT_OUTCOME: ${{ steps.pdf_report.outcome }}
           UPLOAD_OUTCOME: ${{ steps.upload_report.outcome }}
         run: |
           if [ "$CHECKOV_OUTCOME" != "success" ]; then
@@ -109,7 +118,12 @@ jobs:
           fi
 
           if [ "$REPORT_OUTCOME" != "success" ]; then
-            echo "::error::French report generation failed."
+            echo "::error::Markdown report generation failed."
+            exit 1
+          fi
+
+          if [ "$PDF_REPORT_OUTCOME" != "success" ]; then
+            echo "::error::PDF report generation failed."
             exit 1
           fi
 
