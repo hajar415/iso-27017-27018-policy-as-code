@@ -1,0 +1,33 @@
+{
+    "schema_version": "1.0",
+    "notice": "Les priorites ci-dessous sont definies par le projet. Elles ne sont pas des gravites officielles de Checkov ni une declaration de conformite ISO.",
+    "controls": {
+        "CKV_AWS_24": {
+            "title": "Acces SSH ouvert depuis Internet",
+            "plain_language": "Une regle de securite autorise des connexions SSH depuis n'importe quelle adresse IPv4.",
+            "risk": "Un service d'administration expose sur Internet peut recevoir des tentatives de connexion non autorisees.",
+            "recommendation": "Limiter SSH aux adresses ou reseaux autorises. Privilegier un acces prive ou un bastion securise lorsque cela convient a l'architecture.",
+            "project_priority": "high",
+            "iso_mapping_status": "to_validate",
+            "iso_mapping_note": "La correspondance exacte avec les controles ISO applicables doit etre verifiee dans les editions de reference."
+        },
+        "CKV2_AWS_5": {
+            "title": "Groupe de securite non associe",
+            "plain_language": "Un groupe de securite est defini, mais Checkov ne detecte pas son association a une ressource.",
+            "risk": "Cette configuration peut indiquer une ressource inutilisee, une configuration incomplete ou un ecart entre la configuration attendue et la configuration reelle.",
+            "recommendation": "Verifier si le groupe de securite est necessaire. Le supprimer s'il est inutile, ou l'associer a la ressource prevue si cela correspond a l'architecture.",
+            "project_priority": "low",
+            "iso_mapping_status": "to_validate",
+            "iso_mapping_note": "Ce controle technique ne constitue pas, a lui seul, la preuve d'une violation d'une clause ISO."
+        },
+        "CKV2_AWS_61": {
+            "title": "Politique de cycle de vie S3 absente",
+            "plain_language": "Aucune configuration de cycle de vie S3 correspondant au controle Checkov n'a ete detectee.",
+            "risk": "Sans gestion adaptee du cycle de vie, les objets peuvent etre conserves plus longtemps que prevu ou generer des couts de stockage inutiles.",
+            "recommendation": "Definir des regles de transition ou de suppression selon les besoins metier, les obligations de conservation et la sensibilite des donnees. Ne pas supprimer automatiquement des donnees sans validation.",
+            "project_priority": "medium",
+            "iso_mapping_status": "to_validate",
+            "iso_mapping_note": "La pertinence depend de la politique de conservation des donnees et du contexte. Aucune clause ISO precise n'est attribuee a ce stade."
+        }
+    }
+}
