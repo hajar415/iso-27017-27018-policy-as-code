@@ -401,8 +401,44 @@ def generate_pdf(input_path: Path, mapping_path: Path, output_path: Path) -> tup
     resource_count = as_text(summary.get("resource_count"))
     version = as_text(summary.get("checkov_version"))
     now = datetime.now().astimezone().strftime("%d/%m/%Y à %H:%M:%S")
-    commit = os.environ.get("GITHUB_SHA", "")[:12] or "Exécution locale"
-    branch = os.environ.get("GITHUB_REF_NAME", "Local")
+
+    # During a pull_request event, GITHUB_REF_NAME is usually "<number>/merge".
+    # Prefer the source and target branch variables for readable report metadata.
+    branch = (
+        os.environ.get("GITHUB_HEAD_REF")
+        or os.environ.get("GITHUB_REF_NAME", "Local")
+    )
+    target_branch = os.environ.get("GITHUB_BASE_REF") or "—"
+
+    pr_number = ""
+    source_commit = ""
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+
+    if event_path:
+        try:
+            event_payload = json.loads(
+                Path(event_path).read_text(encoding="utf-8")
+            )
+            pull_request = event_payload.get("pull_request", {})
+
+            if isinstance(pull_request, dict):
+                pr_number = str(
+                    pull_request.get("number")
+                    or event_payload.get("number")
+                    or ""
+                )
+                head = pull_request.get("head", {})
+
+                if isinstance(head, dict):
+                    source_commit = str(head.get("sha") or "")
+
+        except (OSError, json.JSONDecodeError):
+            # Fall back to the standard GitHub Actions variables if payload
+            # metadata is unavailable or malformed.
+            pass
+
+    commit_value = source_commit or os.environ.get("GITHUB_SHA", "")
+    commit = commit_value[:12] or "Exécution locale"
     run_id = os.environ.get("GITHUB_RUN_ID", "Non disponible localement")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -462,8 +498,10 @@ def generate_pdf(input_path: Path, mapping_path: Path, output_path: Path) -> tup
         ("Date de génération", now),
         ("Version de Checkov", version),
         ("Ressources analysées", resource_count),
-        ("Branche", branch),
-        ("Commit", commit),
+        ("Branche source", branch),
+        ("Branche cible", target_branch),
+        ("Pull Request", f"#{pr_number}" if pr_number else "Non applicable"),
+        ("Commit source analysé", commit),
         ("Identifiant du run GitHub", run_id),
     ]
     story.append(field_table(metadata, width, styles))
