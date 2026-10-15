@@ -1,4 +1,4 @@
-# Policy as Code — Automatisation des contrôles de sécurité Cloud
+[compliance-report.pdf](https://github.com/user-attachments/files/33516608/compliance-report.pdf)# Policy as Code — Automatisation des contrôles de sécurité Cloud
 
 **Projet de sécurité Cloud | Terraform · Checkov · GitHub Actions · ISO/IEC 27017 & ISO/IEC 27018**
 
@@ -151,7 +151,10 @@ Le workflow `test: verify detection of security violations` se termine en échec
 
 Le rapport détaille les résultats de l’analyse et identifie les contrôles ayant échoué.
 
-**Rapport non conforme :** [TÉLÉCHARGER LE RAPPORT PDF](./rapport-non-conforme.pdf)
+**Rapport non conforme :** 
+
+[Uploading compliance-report.pdf…]()
+
 
 Résultats observés lors de cette exécution :
 
