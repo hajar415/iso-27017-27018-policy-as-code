@@ -52,3 +52,4 @@ resource "aws_instance" "compliant" {
   subnet_id              = aws_subnet.compliant.id
   vpc_security_group_ids = [aws_security_group.compliant.id]
 }
+# Test conforme pour relancer le scan.
