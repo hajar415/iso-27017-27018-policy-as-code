@@ -1,4 +1,4 @@
-[compliance-report.pdf](https://github.com/user-attachments/files/33516608/compliance-report.pdf)# Policy as Code — Automatisation des contrôles de sécurité Cloud
+# Policy as Code — Automatisation des contrôles de sécurité Cloud
 
 **Projet de sécurité Cloud | Terraform · Checkov · GitHub Actions · ISO/IEC 27017 & ISO/IEC 27018**
 
@@ -153,8 +153,7 @@ Le rapport détaille les résultats de l’analyse et identifie les contrôles a
 
 **Rapport non conforme :** 
 
-[Uploading compliance-report.pdf…]()
-
+[compliance-report.pdf](https://github.com/user-attachments/files/33516821/compliance-report.pdf)
 
 Résultats observés lors de cette exécution :
 
